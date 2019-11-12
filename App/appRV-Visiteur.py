@@ -83,6 +83,22 @@ def getMedicaments() :
 		reponse.status_code = 404
 	return reponse
 	
+@app.route('/motifs' , methods = [ 'GET' ] )
+def getMotifs() :
+	motifs = modeleGSBRV.getMotifs()
+	
+	if motifs != None :
+		reponse = make_response( json.dumps( motifs))
+		reponse.mimetype = 'application/json'
+		reponse.status_code = 200
+	else :
+		reponse = make_response( '' )
+		reponse.mimetype = 'application/json'
+		reponse.status_code = 404
+	return reponse
+	
+	
+	
 @app.route( '/rapports' , methods = [ 'POST' ] )
 def addRapportVisite() :
 	unRapport = json.loads( request.data )
@@ -107,14 +123,26 @@ def addEchantillonsOfferts( matricule , numRapport ) :
 	
 	
 	reponse = make_response( '' )												
-	if numRapport != None :
+	if nbEchantillons != None :
 		reponse.headers[ 'Location' ] = '/rapports/echantillons/%s/%s' % ( matricule , numRapport )
 		reponse.status_code = 201
 	else :
 		reponse.status_code = 409
 	return reponse
 
-
+@app.route( '/rapports/echantillons/<matricule>/<praticien>/<datevisite>' , methods = [ 'POST' ] )
+def addEchantillonsOffertsWithDateVisiteAndPraticien( matricule , praticien, datevisite ) :
+	echantillons = json.loads( request.data )
+	nbEchantillons = modeleGSBRV.enregistrerEchantillonsOffertsParDateVisiteEtPraticien( matricule , praticien, datevisite, echantillons )
+	
+	
+	reponse = make_response( '' )												
+	if nbEchantillons != None :
+		reponse.headers[ 'Location' ] = '/rapports/echantillons/%s/%s/%s' % ( matricule , praticien, datevisite )
+		reponse.status_code = 201
+	else :
+		reponse.status_code = 409
+	return reponse
 
 
 

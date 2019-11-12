@@ -37,9 +37,10 @@ def seConnecter( matricule , mdp ) :
 					) 
 					and t1.tra_role <> 'Responsable'
 					and Visiteur.vis_matricule = %s
+					and Visiteur.vis_mdp = %s
 				'''
 
-		curseur.execute( requete , ( matricule , ) )
+		curseur.execute( requete , ( matricule ,mdp ) )
 		
 		enregistrement = curseur.fetchone()
 		
@@ -263,6 +264,92 @@ def enregistrerEchantillonsOfferts( matricule , numRapport , echantillons ) :
 
 	except :
 		return None
+		
+		
+		
+def getMotifs():
+	
+	try:
+		curseur = getConnexionBD().cursor()
+		
+		requete='''
+			select * from Motif
+		'''
+
+		curseur.execute( requete , () )
+		
+		enregistrements = curseur.fetchall()
+		
+		Motifs = []
+		for unEnregistrement in enregistrements :
+			unMotif = {}
+			unMotif[ 'mot_id' ] = unEnregistrement[ 0 ]
+			unMotif[ 'mot_libelle' ] = unEnregistrement[ 1 ]
+			unMotif[ 'mot_précision' ] = unEnregistrement[ 2 ]
+			Motifs.append( unMotif )
+			
+		curseur.close()
+		return Motifs
+		
+	except :
+		return None
+		
+def enregistrerEchantillonsOffertsParDateVisiteEtPraticien( matricule , praticien, datevisite, echantillons ) :
+	
+	numRapportVisite = getNumRapportWithDateAndPraticien( praticien, datevisite )
+	
+	if numRapportVisite != None :
+		
+		try:
+			curseur = getConnexionBD().cursor()
+			
+			requete = '''
+				insert into Offrir( vis_matricule , rap_num , med_depotlegal , off_quantite )
+				values( %s , %s , %s , %s )
+				'''
+				
+			nbOffresInserees = 0
+			for offre in echantillons.items() :
+				curseur.execute( requete, ( matricule , numRapportVisite , offre[ 0 ] , offre[ 1 ]) )
+				nbOffresInserees += curseur.rowcount
+				
+			connexionBD.commit()
+			
+			curseur.close()
+
+			return nbOffresInserees
+
+		except :
+			return None	
+
+def getNumRapportWithDateAndPraticien(praticien, datevisite) :
+	
+	try :
+		curseur = getConnexionBD().cursor()
+		requete = '''
+					select rap_num
+					from RapportVisite
+					where pra_num = %s 
+					and rap_date_visite = %s
+
+				'''
+
+		curseur.execute( requete , ( praticien, datevisite, ) )
+		
+		enregistrement = curseur.fetchone()
+
+		if enregistrement[ 0 ] != None :
+			return enregistrement[ 0 ]
+		else :
+			return None
+			
+		curseur.close()
+		return visiteur
+		
+	except :
+		return None		
+			
+
 
 		
 if __name__ == '__main__' :
@@ -310,6 +397,11 @@ if __name__ == '__main__' :
 		print 'Liste des medicaments offerts par le visiteur a131 lors de sa 1ère visite :'
 		for uneOffre in getEchantillonsOfferts( 'a131' , 1 ) :
 			print uneOffre
+		print
+		
+		print 'Liste des Motifs'
+		for unMofif in getMotifs():
+			print unMofif
 		print
 		
 		
