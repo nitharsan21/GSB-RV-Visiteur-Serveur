@@ -3,7 +3,7 @@
 
 
 import mysql.connector
-
+from datetime import date
 
 connexionBD = None
 
@@ -216,30 +216,36 @@ def genererNumeroRapportVisite( matricule ) :
 
 def enregistrerRapportVisite( matricule , numPraticien , dateVisite , bilan ) :
 	
-	numRapportVisite = genererNumeroRapportVisite( matricule )
+	datedesaisir = date.today().strftime('%Y-%m-%d')
+
+	if datedesaisir >= dateVisite :
 	
-	if numRapportVisite != None :
-	
-		try:
-			curseur = getConnexionBD().cursor()
-
-			requete = '''
-				insert into RapportVisite( vis_matricule , rap_num , rap_date_visite , rap_bilan , pra_num )
-				values( %s , %s , %s , %s , %s )
-				'''
-
-			curseur.execute( requete, ( matricule , numRapportVisite , dateVisite , bilan , numPraticien ) )
-			connexionBD.commit()
-			curseur.close()
-
-			return numRapportVisite
-
-		except:
-			return None
-
-	else :
-		return None
+		numRapportVisite = genererNumeroRapportVisite( matricule )
 		
+		if numRapportVisite != None :
+			
+			try:
+				curseur = getConnexionBD().cursor()
+
+				requete = '''
+					insert into RapportVisite( vis_matricule , rap_num , rap_date_visite , rap_bilan , pra_num , rap_date_saisir )
+					values( %s , %s , %s , %s , %s ,%s )
+					'''
+
+				curseur.execute( requete, ( matricule , numRapportVisite , dateVisite , bilan , numPraticien, datedesaisir  ) )
+				connexionBD.commit()
+				curseur.close()
+
+				return numRapportVisite
+
+			except:
+				return None
+
+		else :
+			return None
+	else:
+		return None
+	
 		
 def enregistrerEchantillonsOfferts( matricule , numRapport , echantillons ) :
 	
@@ -296,7 +302,7 @@ def getMotifs():
 		
 def enregistrerEchantillonsOffertsParDateVisiteEtPraticien( matricule , praticien, datevisite, echantillons ) :
 	
-	numRapportVisite = getNumRapportWithDateAndPraticien( praticien, datevisite )
+	numRapportVisite = getNumRapportWithDateAndPraticien( matricule, praticien, datevisite )
 	
 	if numRapportVisite != None :
 		
@@ -322,7 +328,7 @@ def enregistrerEchantillonsOffertsParDateVisiteEtPraticien( matricule , praticie
 		except :
 			return None	
 
-def getNumRapportWithDateAndPraticien(praticien, datevisite) :
+def getNumRapportWithDateAndPraticien( matricule, praticien, datevisite) :
 	
 	try :
 		curseur = getConnexionBD().cursor()
@@ -331,10 +337,11 @@ def getNumRapportWithDateAndPraticien(praticien, datevisite) :
 					from RapportVisite
 					where pra_num = %s 
 					and rap_date_visite = %s
+					and vis_matricule = %s
 
 				'''
 
-		curseur.execute( requete , ( praticien, datevisite, ) )
+		curseur.execute( requete , ( praticien, datevisite, matricule ) )
 		
 		enregistrement = curseur.fetchone()
 
